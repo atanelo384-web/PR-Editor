@@ -1,0 +1,6 @@
+Static QA — 2026-10-15
+Swift parser: PASS — all sources parsed with swiftc -frontend -parse
+YAML syntax: PASS — project.yml and GitHub Actions workflow
+Icon: PASS — RGB 1024x1024; Contents.json valid
+iOS compile/runtime: NOT CHECKED (xcodebuild requires macOS + Xcode)
+Signed IPA: NOT CREATED (requires Apple certificate + provisioning profile)
