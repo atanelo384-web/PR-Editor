@@ -1,0 +1,40 @@
+name: Build PR for iPhone
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: PR-iPhone
+        run: xcodegen generate --spec project.yml
+      - name: Build for iPhone (unsigned)
+        working-directory: PR-iPhone
+        run: |
+          set -o pipefail
+          xcodebuild -project PR.xcodeproj -scheme PR -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/PRBuild" CODE_SIGNING_ALLOWED=NO build
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/PRBuild/Build/Products/Release-iphoneos/PR.app"
+          test -d "$APP"
+          mkdir -p "$RUNNER_TEMP/Unsigned/Payload"
+          cp -R "$APP" "$RUNNER_TEMP/Unsigned/Payload/PR.app"
+          (cd "$RUNNER_TEMP/Unsigned" && zip -qry "$GITHUB_WORKSPACE/PR-unsigned.ipa" Payload)
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PR-unsigned-not-installable
+          path: PR-unsigned.ipa
+          if-no-files-found: error
